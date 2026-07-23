@@ -569,7 +569,19 @@
           });
         })(navBtns[i]);
       }
+      /* 先用当前能读到的数据渲染，避免等待 MVU 期间白屏 */
       loadData();
+      /* 等 MVU 就绪后再读一次（变量通常绑在最新楼层），并挂上更新监听 */
+      try {
+        if (typeof waitGlobalInitialized === 'function') {
+          waitGlobalInitialized('Mvu').then(function () {
+            loadData();
+            bindMvuEvents();
+          }).catch(function () {});
+        } else {
+          bindMvuEvents();
+        }
+      } catch (e) {}
     }
     // 兼容两种嵌入方式：作为完整页面直接打开时文档仍在解析（loading），等事件；
     // 被 .load() 等方式异步注入时事件早已触发，直接执行初始化。
@@ -591,17 +603,55 @@
       render();
     }
 
-    function loadData() {
+    /* 多入口读取变量表：优先 MVU 最新楼层，逐级兜底；任何环境异常都返回 null */
+    function readMvuVars() {
       try {
-        var helper = window.TavernHelper || window;
-        if (helper.getVariables) {
-          var cv = helper.getVariables({type:'chat'});
-          var d = cv && cv.qos_app && cv.qos_app.wifeProfile;
-          if (d) { for (var k in d) wifeData[k] = d[k]; }
+        if (typeof Mvu !== 'undefined' && Mvu.getMvuData) {
+          var v1 = Mvu.getMvuData({ type: 'message', message_id: 'latest' });
+          if (v1) return v1;
         }
-      } catch(e) {}
+      } catch (e) {}
+      try {
+        if (typeof getAllVariables === 'function') {
+          var v2 = getAllVariables();
+          if (v2) return v2;
+        }
+      } catch (e) {}
+      try {
+        if (typeof getVariables === 'function') {
+          var v3 = getVariables({ type: 'chat' });
+          if (v3) return v3;
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    /* stat_data 防嵌套解套，取到真实数据层 */
+    function unwrapStatData(cv) {
+      var data = cv;
+      while (data && data.stat_data) { data = data.stat_data; }
+      return data;
+    }
+
+    function loadData() {
+      var cv = readMvuVars();
+      if (cv) {
+        var data = unwrapStatData(cv);
+        var d = data && data.qos_app && data.qos_app.wifeProfile;
+        if (d) { for (var k in d) wifeData[k] = d[k]; }
+      }
       initForumPosts();
       render();
+    }
+
+    /* 变量初始化/更新后自动刷新界面 */
+    function bindMvuEvents() {
+      try {
+        if (typeof eventOn === 'function' && typeof Mvu !== 'undefined' && Mvu.events) {
+          eventOn(Mvu.events.VARIABLE_UPDATE_ENDED, function () { loadData(); });
+          eventOn(Mvu.events.VARIABLE_INITIALIZED, function () { loadData(); });
+        }
+      } catch (e) {}
     }
 
     function render() {
