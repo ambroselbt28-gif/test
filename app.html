@@ -1,0 +1,859 @@
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    
+    .phone {
+      max-width: 420px; margin: 0 auto; height: 100vh;
+      border-left: 1px solid rgba(255,255,255,0.08);
+      border-right: 1px solid rgba(255,255,255,0.08);
+      display: flex; flex-direction: column; background: #0f0f0f;
+    }
+    
+    .content { flex: 1; overflow-y: auto; padding: 16px; }
+    .content::-webkit-scrollbar { width: 3px; }
+    .content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    
+    .profile-header { text-align: center; padding: 20px 0; }
+    .profile-avatar {
+      width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 12px;
+      background: linear-gradient(135deg, #ff69b4, #bd00ff);
+      display: grid; place-items: center; font-size: 48px; overflow: hidden;
+    }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-name { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .profile-meta { font-size: 13px; color: #888; margin-bottom: 8px; }
+    .profile-status {
+      display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 12px;
+      background: rgba(255,105,180,0.15); color: #ff69b4; border: 1px solid rgba(255,105,180,0.3);
+    }
+    .profile-status.locked { background: rgba(255,77,77,0.1); color: #ff4d4d; border-color: rgba(255,77,77,0.3); }
+    
+    .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+    .card-title { font-size: 14px; font-weight: 700; color: #ff69b4; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+    
+    .meter-row { margin-bottom: 14px; }
+    .meter-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+    .meter-label span:first-child { color: #aaa; }
+    .meter-label span:last-child { color: #fff; font-weight: 600; }
+    .meter-track { height: 8px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+    .meter-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+    .meter-fill.corruption { background: linear-gradient(90deg, #ff69b4, #bd00ff); }
+    
+    .level-display { text-align: center; padding: 8px 0; }
+    .level-symbol { font-size: 28px; letter-spacing: 4px; }
+    .level-name { font-size: 12px; color: #888; margin-top: 4px; }
+    
+    .lock-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .lock-item:last-child { border-bottom: none; }
+    .lock-label { font-size: 12px; color: #aaa; }
+    .lock-value { font-size: 13px; color: #fff; font-weight: 600; }
+    .lock-value.locked { color: #555; cursor: pointer; user-select: none; }
+    .lock-value.locked.revealed { color: #ff69b4; }
+    
+    .body-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 10px; }
+    .body-stat-item { text-align: center; padding: 12px 8px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); }
+    .body-stat-value { font-size: 20px; font-weight: 700; color: #fff; }
+    .body-stat-label { font-size: 11px; color: #666; margin-top: 4px; }
+    .body-detail { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .body-detail:last-child { border-bottom: none; }
+    .body-detail-label { font-size: 11px; color: #666; margin-bottom: 2px; }
+    .body-detail-value { font-size: 13px; color: #ccc; }
+    
+    .outfit-grid { display: grid; gap: 8px; padding: 4px 0; }
+    .outfit-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); }
+    .outfit-icon { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 16px; flex-shrink: 0; background: rgba(255,105,180,0.1); border: 1px solid rgba(255,105,180,0.15); }
+    .outfit-info { flex: 1; }
+    .outfit-category { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1px; }
+    .outfit-desc { font-size: 13px; color: #ddd; }
+    
+    .quest-toggle { width: 100%; background: none; border: none; display: flex; justify-content: space-between; color: #ff69b4; font-size: 14px; font-weight: 700; cursor: pointer; padding: 0; margin-bottom: 14px; }
+    .quest-toggle .arrow { transition: transform 0.2s; font-size: 12px; }
+    .quest-toggle .arrow.open { transform: rotate(180deg); }
+    .quest-list { display: none; gap: 8px; }
+    .quest-list.open { display: grid; }
+    .quest-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13px; border: 1px solid rgba(255,255,255,0.06); }
+    .quest-item .quest-icon { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; flex-shrink: 0; }
+    .quest-item.locked { background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.04); color: #444; }
+    .quest-item.locked .quest-icon { background: rgba(255,255,255,0.05); color: #444; border: 1px solid rgba(255,255,255,0.08); }
+    .quest-item.available { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.12); color: #ddd; }
+    .quest-item.available .quest-icon { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+    .quest-item.completed { background: rgba(74,222,128,0.08); border-color: rgba(74,222,128,0.2); color: #4ade80; }
+    .quest-item.completed .quest-icon { background: rgba(74,222,128,0.2); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+    .quest-item .quest-stage { font-size: 10px; color: inherit; opacity: 0.6; margin-left: auto; flex-shrink: 0; }
+    
+    .mod-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+    .mod-item:last-child { border-bottom: none; }
+    .mod-name { font-size: 13px; color: #ccc; }
+    .mod-status { font-size: 12px; padding: 3px 10px; border-radius: 999px; }
+    .mod-status.yes { background: rgba(74,222,128,0.15); color: #4ade80; }
+    .mod-status.no { background: rgba(255,255,255,0.05); color: #666; }
+    .mod-detail { padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-top: 8px; font-size: 12px; color: #aaa; line-height: 1.6; display: none; }
+    .mod-detail.show { display: block; }
+    
+    .kink-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .kink-tag { padding: 6px 14px; border-radius: 999px; font-size: 12px; background: rgba(255,105,180,0.15); color: #ff69b4; border: 1px solid rgba(255,105,180,0.3); }
+    .kink-tag.locked { background: rgba(255,255,255,0.03); color: #444; border-color: rgba(255,255,255,0.08); }
+    
+    .diary-btn { width: 100%; padding: 14px; background: rgba(255,105,180,0.1); border: 1px solid rgba(255,105,180,0.2); border-radius: 12px; color: #ff69b4; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .diary-btn:hover { background: rgba(255,105,180,0.15); border-color: rgba(255,105,180,0.4); }
+    
+    .diary-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; place-items: center; z-index: 100; padding: 20px; }
+    .diary-overlay.show { display: grid; }
+    .diary-modal { width: min(100%, 380px); max-height: 70vh; background: #1a1a1a; border: 1px solid rgba(255,105,180,0.3); border-radius: 16px; padding: 20px; overflow-y: auto; }
+    .diary-modal h3 { font-size: 16px; color: #ff69b4; margin-bottom: 16px; display: flex; justify-content: space-between; }
+    .diary-modal .close-btn { background: none; border: none; color: #666; font-size: 20px; cursor: pointer; }
+    .diary-entry { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .diary-entry:last-child { border-bottom: none; }
+    .diary-date { font-size: 11px; color: #666; margin-bottom: 4px; }
+    .diary-text { font-size: 13px; color: #ccc; line-height: 1.6; }
+    
+    /* 底部导航5栏 */
+    .bottom-nav {
+      display: grid;
+      grid-template-columns: 1fr 1fr 56px 1fr 1fr;
+      gap: 2px;
+      padding: 6px 12px 16px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      background: rgba(8,8,8,0.95);
+      flex-shrink: 0;
+      align-items: end;
+    }
+    .nav-btn {
+      background: transparent; border: none; color: #555; padding: 8px 2px 4px;
+      font-size: 10px; cursor: pointer; border-radius: 8px;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+    }
+    .nav-btn .nav-icon { font-size: 18px; line-height: 1; }
+    .nav-btn .nav-label { font-size: 9px; }
+    .nav-btn.active { color: #ff69b4; background: rgba(255,105,180,0.1); }
+    
+    .nav-btn.home-btn {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, #9b59b6, #8e44ad);
+      border: 2px solid rgba(255,255,255,0.15);
+      color: #fff; font-size: 22px; font-weight: 700;
+      display: grid; place-items: center;
+      margin-top: -16px;
+      box-shadow: 0 4px 16px rgba(155,89,182,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+      cursor: pointer; transition: all 0.2s;
+    }
+    .nav-btn.home-btn:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(155,89,182,0.5); }
+    .nav-btn.home-btn.active { background: linear-gradient(135deg, #ff69b4, #bd00ff); box-shadow: 0 4px 20px rgba(189,0,255,0.4); }
+    
+    /* 论坛 */
+    .forum-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px; }
+    .forum-header h2 { font-size: 16px; color: #ff69b4; font-weight: 700; }
+    .forum-actions { display: flex; gap: 6px; }
+    .forum-btn { border: 1px solid rgba(255,105,180,0.25); background: rgba(255,105,180,0.08); color: #ff69b4; border-radius: 8px; padding: 6px 12px; font-size: 11px; cursor: pointer; white-space: nowrap; }
+    .forum-btn:hover { background: rgba(255,105,180,0.15); border-color: rgba(255,105,180,0.4); }
+    .forum-btn.post-btn { background: rgba(255,105,180,0.15); border-color: rgba(255,105,180,0.35); font-weight: 700; }
+    
+    .category-nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+    .category-tab { border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: #888; border-radius: 999px; padding: 6px 6px; font-size: 11px; cursor: pointer; text-align: center; }
+    .category-tab:hover { border-color: rgba(255,105,180,0.2); color: #ccc; }
+    .category-tab.active { background: rgba(255,105,180,0.12); border-color: rgba(255,105,180,0.3); color: #ff69b4; font-weight: 600; }
+    
+    .post-list { display: grid; gap: 8px; }
+    .post-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px; cursor: pointer; }
+    .post-card:hover { border-color: rgba(255,105,180,0.15); background: rgba(255,255,255,0.04); }
+    .post-card.open { border-color: rgba(255,105,180,0.2); background: rgba(255,255,255,0.04); }
+    
+    .post-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+    .post-avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; font-size: 14px; overflow: hidden; }
+    .post-avatar.pink { background: linear-gradient(135deg, #ff69b4, #ff1493); }
+    .post-avatar.purple { background: linear-gradient(135deg, #bd00ff, #7b00ff); }
+    .post-avatar.blue { background: linear-gradient(135deg, #00bfff, #0066ff); }
+    .post-avatar.green { background: linear-gradient(135deg, #00ff88, #00aa55); }
+    .post-avatar.orange { background: linear-gradient(135deg, #ff8800, #ff4400); }
+    .post-avatar.teal { background: linear-gradient(135deg, #00ffcc, #0099aa); }
+    .post-avatar.red { background: linear-gradient(135deg, #ff3333, #aa0000); }
+    .post-avatar.gold { background: linear-gradient(135deg, #ffd700, #ffaa00); }
+    .post-avatar.silver { background: linear-gradient(135deg, #c0c0c0, #808080); }
+    .post-avatar.magenta { background: linear-gradient(135deg, #ff00ff, #cc00aa); }
+    
+    .post-info { flex: 1; min-width: 0; }
+    .post-title { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .post-meta-line { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #666; flex-wrap: wrap; }
+    .post-category-tag { font-size: 9px; padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(255,105,180,0.2); color: #ff69b4; background: rgba(255,105,180,0.06); }
+    .post-author { color: #999; }
+    .post-time { color: #555; }
+    .post-stats { display: flex; align-items: center; gap: 8px; font-size: 10px; color: #555; flex-shrink: 0; }
+    .post-stats span { display: flex; align-items: center; gap: 2px; }
+    
+    .post-body { display: none; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 8px; }
+    .post-body.show { display: block; }
+    .post-content { font-size: 12px; color: #ccc; line-height: 1.8; margin-bottom: 10px; white-space: pre-wrap; }
+    
+    .video-card { display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; margin-bottom: 10px; }
+    .video-icon { width: 48px; height: 48px; border-radius: 8px; background: rgba(255,105,180,0.1); border: 1px solid rgba(255,105,180,0.15); display: grid; place-items: center; font-size: 20px; flex-shrink: 0; }
+    .video-info { flex: 1; }
+    .video-filename { font-size: 11px; color: #aaa; margin-bottom: 4px; font-family: monospace; }
+    .video-desc { font-size: 11px; color: #666; line-height: 1.5; }
+    .video-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; background: rgba(255,105,180,0.1); color: #ff69b4; border: 1px solid rgba(255,105,180,0.15); margin-top: 4px; }
+    
+    .reply-section { margin-top: 8px; }
+    .reply-title { font-size: 11px; color: #888; margin-bottom: 6px; font-weight: 600; }
+    .reply-item { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .reply-item:last-child { border-bottom: none; }
+    .reply-avatar { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; font-size: 11px; }
+    .reply-body { flex: 1; }
+    .reply-author { font-size: 11px; color: #ff69b4; font-weight: 600; margin-bottom: 2px; }
+    .reply-text { font-size: 11px; color: #aaa; line-height: 1.5; }
+    .reply-text .time { display: block; margin-top: 4px; font-size: 9px; color: #555; }
+    
+    .post-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; place-items: center; z-index: 100; padding: 20px; }
+    .post-overlay.show { display: grid; }
+    .post-modal { width: min(100%, 380px); background: #1a1a1a; border: 1px solid rgba(255,105,180,0.3); border-radius: 16px; padding: 20px; }
+    .post-modal h3 { font-size: 16px; color: #ff69b4; margin-bottom: 16px; display: flex; justify-content: space-between; }
+    .post-modal .close-btn { background: none; border: none; color: #666; font-size: 20px; cursor: pointer; }
+    .post-form { display: grid; gap: 12px; }
+    .post-form label { font-size: 11px; color: #888; display: block; margin-bottom: 4px; }
+    .post-form select, .post-form input, .post-form textarea { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 12px; color: #ddd; font-size: 13px; outline: none; }
+    .post-form select:focus, .post-form input:focus, .post-form textarea:focus { border-color: rgba(255,105,180,0.3); }
+    .post-form textarea { min-height: 100px; resize: vertical; }
+    .post-submit-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #ff69b4, #bd00ff); border: none; border-radius: 10px; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .post-submit-btn:hover { filter: brightness(1.1); }
+    
+    /* 消息 */
+    .messages-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .messages-header h2 { font-size: 16px; color: #ff69b4; font-weight: 700; }
+    .msg-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .msg-tab { flex: 1; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); color: #888; border-radius: 8px; padding: 8px; font-size: 11px; cursor: pointer; text-align: center; }
+    .msg-tab.active { background: rgba(255,105,180,0.1); border-color: rgba(255,105,180,0.25); color: #ff69b4; font-weight: 600; }
+    
+    .contact-list { display: grid; gap: 8px; }
+    .contact-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); cursor: pointer; }
+    .contact-item:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,105,180,0.15); }
+    .contact-avatar { width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; font-size: 18px; }
+    .contact-avatar.mine { background: linear-gradient(135deg, #ff69b4, #bd00ff); }
+    .contact-avatar.chris { background: linear-gradient(135deg, #333333, #666666); }
+    .contact-avatar.yumi { background: linear-gradient(135deg, #ff1493, #ff69b4); }
+    .contact-avatar.wife { background: linear-gradient(135deg, #4fc3f7, #0288d1); }
+    .contact-info { flex: 1; min-width: 0; }
+    .contact-name { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 3px; }
+    .contact-preview { font-size: 11px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .contact-time { font-size: 10px; color: #555; flex-shrink: 0; }
+    
+    .notice-item { padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 8px; }
+    .notice-title { font-size: 12px; color: #ff69b4; font-weight: 600; margin-bottom: 4px; }
+    .notice-text { font-size: 11px; color: #888; line-height: 1.5; }
+    .notice-time { font-size: 9px; color: #555; margin-top: 6px; }
+    
+    .chat-view { display: flex; flex-direction: column; height: 100%; }
+    .chat-header { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px; }
+    .chat-header .back-btn { background: none; border: none; color: #aaa; font-size: 16px; cursor: pointer; padding: 4px; }
+    .chat-header .chat-name { font-size: 15px; font-weight: 600; color: #fff; }
+    .chat-header .chat-status { font-size: 10px; color: #666; margin-left: auto; }
+    
+    .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 4px 0; margin-bottom: 12px; }
+    .chat-messages::-webkit-scrollbar { width: 3px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 12px; line-height: 1.6; }
+    .chat-bubble.sent { align-self: flex-end; background: linear-gradient(135deg, #ff69b4, #bd00ff); color: #fff; border-bottom-right-radius: 4px; }
+    .chat-bubble.received { align-self: flex-start; background: rgba(255,255,255,0.06); color: #ddd; border-bottom-left-radius: 4px; }
+    .chat-bubble .bubble-time { display: block; font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 4px; text-align: right; }
+    .chat-bubble.received .bubble-time { color: #666; }
+    
+    .chat-input-area { display: flex; gap: 8px; align-items: flex-end; }
+    .chat-input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 10px 14px; color: #ddd; font-size: 13px; outline: none; resize: none; min-height: 40px; max-height: 100px; }
+    .chat-input:focus { border-color: rgba(255,105,180,0.3); }
+    .chat-send-btn { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #ff69b4, #bd00ff); border: none; color: #fff; font-size: 16px; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
+    .chat-send-btn:hover { filter: brightness(1.1); }
+    
+    /* 热门 */
+    .ranking-section { display: grid; gap: 10px; }
+    .ranking-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px; }
+    .ranking-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .ranking-header h3 { font-size: 14px; font-weight: 700; color: #ff69b4; margin: 0; }
+    .ranking-header .hot-icon { font-size: 16px; animation: hotPulse 1s ease-in-out infinite; }
+    
+    .rank-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .rank-item:last-child { border-bottom: none; }
+    .rank-number { width: 24px; font-size: 13px; font-weight: 800; color: #555; text-align: center; flex-shrink: 0; }
+    .rank-number.gold { color: #ffd700; }
+    .rank-number.silver { color: #c0c0c0; }
+    .rank-number.bronze { color: #cd7f32; }
+    .rank-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; font-size: 16px; }
+    .rank-avatar.yumi { background: linear-gradient(135deg, #ff1493, #ff69b4); }
+    .rank-avatar.goldbg { background: linear-gradient(135deg, #ffd700, #ffaa00); }
+    .rank-avatar.purplebg { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+    .rank-avatar.tealbg { background: linear-gradient(135deg, #1abc9c, #16a085); }
+    .rank-avatar.pinkbg { background: linear-gradient(135deg, #ff69b4, #ff1493); }
+    
+    .rank-info { flex: 1; min-width: 0; }
+    .rank-name { font-size: 13px; font-weight: 600; color: #fff; }
+    .rank-name .title-tag { font-size: 9px; color: #ff69b4; margin-left: 6px; }
+    .rank-meta { font-size: 10px; color: #666; margin-top: 2px; }
+    .rank-heat { font-size: 12px; font-weight: 700; color: #ff69b4; flex-shrink: 0; animation: heatGlow 1.5s ease-in-out infinite; }
+    
+    .rank-post-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .rank-post-item:last-child { border-bottom: none; }
+    .rank-post-title { flex: 1; font-size: 12px; color: #ccc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rank-post-heat { font-size: 11px; color: #ff69b4; font-weight: 600; flex-shrink: 0; }
+    .rank-post-cat { font-size: 9px; padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(255,105,180,0.2); color: #ff69b4; background: rgba(255,105,180,0.06); flex-shrink: 0; }
+    
+    .bond-status-box { margin-top: 10px; padding: 12px 14px; border-radius: 12px; border: 2px solid rgba(255,105,180,0.3); background: rgba(255,105,180,0.06); display: flex; justify-content: space-between; align-items: center; }
+    .bond-label { font-size: 12px; color: #aaa; }
+    .bond-name { font-size: 14px; font-weight: 700; color: #fff; }
+    .bond-status { font-size: 12px; color: #888; font-weight: 600; }
+    
+    /* 首页 - 黑桃Q设计 */
+    .home-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 0 30px;
+      text-align: center;
+    }
+    .home-spade {
+      font-size: 120px;
+      line-height: 1;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ff69b4, #bd00ff, #9b59b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 30px rgba(189,0,255,0.3)) drop-shadow(0 0 60px rgba(255,105,180,0.15));
+      margin-bottom: 8px;
+      position: relative;
+      animation: spadeGlow 3s ease-in-out infinite;
+    }
+    .home-spade-q {
+      font-size: 48px;
+      line-height: 1;
+      font-weight: 900;
+      color: rgba(255,255,255,0.1);
+      margin-top: -20px;
+      margin-bottom: 20px;
+      letter-spacing: 8px;
+    }
+    .home-welcome {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+      letter-spacing: 2px;
+    }
+    .home-sub {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 20px;
+    }
+    .home-divider {
+      width: 60px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #ff69b4, transparent);
+      margin: 0 auto 16px;
+    }
+    
+    @keyframes spadeGlow {
+      0%, 100% { filter: drop-shadow(0 0 30px rgba(189,0,255,0.3)) drop-shadow(0 0 60px rgba(255,105,180,0.15)); }
+      50% { filter: drop-shadow(0 0 40px rgba(189,0,255,0.5)) drop-shadow(0 0 80px rgba(255,105,180,0.25)); }
+    }
+    
+    .home-activity { margin-top: 4px; }
+    .home-activity-item { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .home-activity-item:last-child { border-bottom: none; }
+    .home-activity-icon { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; flex-shrink: 0; }
+    .home-activity-icon.msg { background: rgba(255,105,180,0.15); }
+    .home-activity-icon.post { background: rgba(189,0,255,0.15); }
+    .home-activity-icon.rank { background: rgba(255,215,0,0.15); }
+    .home-activity-text { flex: 1; font-size: 12px; color: #ccc; }
+    .home-activity-time { font-size: 10px; color: #555; flex-shrink: 0; }
+    
+    @keyframes hotPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+    @keyframes heatGlow { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
+    .empty-page { display: grid; place-items: center; height: 100%; color: #444; font-size: 14px; }
+  </style>
+
+  <div class="phone">
+    <div class="content" id="app"></div>
+    <div class="bottom-nav" id="bottomNav">
+      <button class="nav-btn" data-tab="forum"><span class="nav-icon">📋</span><span class="nav-label">论坛</span></button>
+      <button class="nav-btn" data-tab="messages"><span class="nav-icon">💬</span><span class="nav-label">消息</span></button>
+      <button class="nav-btn home-btn active" data-tab="home">♠</button>
+      <button class="nav-btn" data-tab="ranking"><span class="nav-icon">🔥</span><span class="nav-label">热门</span></button>
+      <button class="nav-btn" data-tab="profile"><span class="nav-icon">👤</span><span class="nav-label">绑定</span></button>
+    </div>
+  </div>
+
+  <div class="diary-overlay" id="diaryOverlay" onclick="closeDiary(event)">
+    <div class="diary-modal" onclick="event.stopPropagation()">
+      <h3><span>📖 私密日记</span><button class="close-btn" onclick="closeDiary()">✕</button></h3>
+      <div id="diaryEntries"></div>
+    </div>
+  </div>
+
+  <div class="post-overlay" id="postOverlay" onclick="closePostModal(event)">
+    <div class="post-modal" onclick="event.stopPropagation()">
+      <h3><span>📝 发布新帖</span><button class="close-btn" onclick="closePostModal()">✕</button></h3>
+      <div class="post-form">
+        <div><label>版块分类</label><select id="postCategory">
+          <option value="0">【新人报道】</option>
+          <option value="1">【求助提问】</option>
+          <option value="2">【媚黑交流】</option>
+          <option value="3">【同好交友】</option>
+          <option value="4">【纹身穿搭】</option>
+          <option value="5">【视频分享】</option>
+        </select></div>
+        <div><label>帖子标题</label><input type="text" id="postTitle" placeholder="输入标题..." maxlength="50"></div>
+        <div><label>帖子内容</label><textarea id="postContent" placeholder="写下你想说的..." maxlength="1000"></textarea></div>
+        <button class="post-submit-btn" onclick="submitPost()">发布帖子</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var cupSizes = ["A","B","C","D","E","F","G"];
+    function getCupSize(level) { var idx = 1; if (level >= 5) idx = 3; else if (level >= 3) idx = 2; return cupSizes[idx]; }
+
+    var categoryNames = ["新人报道","求助提问","媚黑交流","同好交友","纹身穿搭","视频分享"];
+    var catIcons = ["🌸","❓","♠","👭","💎","🎬"];
+
+    var npcPool = [
+      {name:"樱花酱",gender:"女",avatarClass:"pink",icon:"🌸"},
+      {name:"东京奈奈子",gender:"女",avatarClass:"purple",icon:"💜"},
+      {name:"涩谷真由美",gender:"女",avatarClass:"magenta",icon:"💄"},
+      {name:"大阪由美",gender:"女",avatarClass:"pink",icon:"🎀"},
+      {name:"横滨绫乃",gender:"女",avatarClass:"teal",icon:"🌊"},
+      {name:"银座美穗",gender:"女",avatarClass:"gold",icon:"👑"},
+      {name:"秋叶原麻衣",gender:"女",avatarClass:"blue",icon:"📱"},
+      {name:"浅草千夏",gender:"女",avatarClass:"purple",icon:"🎐"},
+      {name:"健太君",gender:"男",avatarClass:"blue",icon:"👔"},
+      {name:"翔太学长",gender:"男",avatarClass:"green",icon:"🎓"},
+      {name:"直树先生",gender:"男",avatarClass:"orange",icon:"👓"},
+      {name:"拓也前辈",gender:"男",avatarClass:"red",icon:"🔥"},
+      {name:"真司郎",gender:"男",avatarClass:"silver",icon:"⚙️"},
+      {name:"一郎先生",gender:"男",avatarClass:"orange",icon:"🍺"}
+    ];
+
+    var queenRankings = [
+      {name:"由美",heat:98,avatarClass:"yumi",icon:"💋",title:"克里斯之妻"},
+      {name:"银座美穗",heat:92,avatarClass:"goldbg",icon:"👑",title:"银座女帝"},
+      {name:"东京奈奈子",heat:87,avatarClass:"purplebg",icon:"💜",title:"涩谷女王"},
+      {name:"横滨绫乃",heat:81,avatarClass:"tealbg",icon:"🌊",title:"港区名媛"},
+      {name:"涩谷真由美",heat:76,avatarClass:"pinkbg",icon:"💄",title:"辣妹教主"}
+    ];
+
+    var postReplies = {
+      0:[{author:"东京奈奈子",text:"欢迎你来到这个世界！"},{author:"横滨绫乃",text:"はじめまして！我也是东京的主妇呢。"},{author:"浅草千夏",text:"我也是家政妇！"}],
+      1:[{author:"涩谷真由美",text:"名古屋！我之前在名古屋住过三年。"},{author:"樱花酱",text:"美容院工作！穿搭一定很好看。"},{author:"银座美穗",text:"我也是朋友介绍来的。"}],
+      2:[{author:"大阪由美",text:"第三次了我太懂了……"},{author:"樱花酱",text:"藏第4页文件夹也太真实了。"},{author:"直树先生",text:"做自己就好。"},{author:"拓也前辈",text:"也要注意安全。"}],
+      3:[{author:"银座美穗",text:"黑桃♠代表被占有的财产。黑桃Q等级是实心黑桃纹样加白色Q。进阶有BBC专用内胆纹身和黑爹免费使用导向箭头。"},{author:"涩谷真由美",text:"银座美穗说得太详细了！"},{author:"直树先生",text:"先从简单的黑桃开始吧。"},{author:"银座美穗",text:"同意先试水。"}],
+      4:[{author:"东京奈奈子",text:"小黑裙不会出错。拒绝是完全OK的。"},{author:"翔太学长",text:"那位黑人先生会照顾你的。"},{author:"拓也前辈",text:"去俱乐部最重要的是心态。"}],
+      5:[{author:"大阪由美",text:"不要主动坦白但也不要撒谎太明显。"},{author:"秋叶原麻衣",text:"把App图标改成计算器的样子。"},{author:"樱花酱",text:"如果他发现了你打算怎么办？"}],
+      6:[{author:"东京奈奈子",text:"完全同意你说的……"},{author:"横滨绫乃",text:"我第一次是在六本木的俱乐部。"},{author:"真司郎",text:"肤色对比带来的视觉冲击很特别。"}],
+      7:[{author:"银座美穗",text:"最棒的地方是禁忌感本身。"},{author:"浅草千夏",text:"他们的体味也很好闻。"},{author:"健太君",text:"禁忌感才是QOS精神。"}],
+      8:[{author:"大阪由美",text:"我老公也不知道……"},{author:"涩谷真由美",text:"你事后怎么清理的？"},{author:"大阪由美",text:"换床单开窗通风喷香水一条龙。"}],
+      9:[{author:"拓也前辈",text:"涩谷那家我上周也去了！"},{author:"樱花酱",text:"求具体地址！"},{author:"直树先生",text:"直接进就行，女生建议结伴。"}],
+      10:[{author:"涩谷真由美",text:"东京+1！我在目黑区住。"},{author:"浅草千夏",text:"想加入！"},{author:"银座美穗",text:"我在银座附近工作！"}],
+      11:[{author:"横滨绫乃",text:"大阪！我在心斋桥附近。"},{author:"真司郎",text:"梅田有很好的QOS主题酒吧。"},{author:"樱花酱",text:"关西群加我一个！"}],
+      12:[{author:"秋叶原麻衣",text:"我也在IT公司做前端开发！"},{author:"直树先生",text:"我是后端工程师。"},{author:"翔太学长",text:"我是做DevOps的。"}],
+      13:[{author:"大阪由美",text:"新宿哪家健身房？"},{author:"健太君",text:"建议组织健身群。"},{author:"拓也前辈",text:"这个主意好！"}],
+      14:[{author:"东京奈奈子",text:"腰窝纹身真的选得好！"},{author:"一郎先生",text:"涉谷有一家Tokyo Ink。"},{author:"涩谷真由美",text:"在Black Lotus做的。"}],
+      15:[{author:"秋叶原麻衣",text:"私密处纹身推荐髋骨位置。"},{author:"银座美穗",text:"我纹在小腹下方。"},{author:"横滨绫乃",text:"我纹在后腰腰窝。"}],
+      16:[{author:"大阪由美",text:"黑色系穿搭就是QOS奥义。"},{author:"樱花酱",text:"马丁靴配黑丝yyds！"},{author:"直树先生",text:"黑丝配马丁靴很有杀伤力。"}],
+      17:[{author:"涩谷真由美",text:"锁骨链推荐QOS Jewel。"},{author:"浅草千夏",text:"脚链我在亚马逊买的。"},{author:"银座美穗",text:"银座三越有暗黑风格配饰。"}],
+      18:[{author:"横滨绫乃",text:"这部纪录片我也看了！"},{author:"拓也前辈",text:"Netflix最近下了功夫。"},{author:"樱花酱",text:"今晚就去看。"}],
+      19:[{author:"东京奈奈子",text:"关注东京秘密很久了！"},{author:"秋叶原麻衣",text:"我也看了那期！"},{author:"真司郎",text:"感谢推荐，刚去订阅了。"}],
+      20:[{author:"涩谷真由美",text:"Vlog的想法好棒！"},{author:"浅草千夏",text:"建议用手机加密文件夹。"},{author:"横滨绫乃",text:"我用GoPro藏在包里。"}],
+      21:[{author:"樱花酱",text:"ASMR配QOS题材没想过。"},{author:"大阪由美",text:"求频道名字！"},{author:"真司郎",text:"频道叫Midnight Whispers。"}]
+    };
+
+    var quickReplies = ["同意楼上说的。","我也是这样的经历。","谢谢分享！","说得太对了。","学习了。","同感！","有道理。","楼上+1。"];
+    var randomTitles = ["今日的约会记录","分享一下最近的进度","老公今天表现不错呢","想问一下大家的经验","新到的内衣到了","今晚要去俱乐部了","遇到了一个超棒的先生","记录一下堕落的过程","给新手的几点建议","老公终于同意了","第一次尝试好紧张","晒一下今日穿搭","周末约了三个","已经彻底回不去了","趁老公不在偷偷发帖"];
+    var randomContents = ["如题，求指导～","真的是一次奇妙的经历……","每次都感觉自己彻底属于那里了。","老公在旁边看着我，心里有种说不出的感觉。","已经彻底沉迷了。","姐妹们你们都是怎么开始的？","今天被夸了身材好～","终于迈出了这一步。","分享一下今天的经历。","大家有推荐的纹身师吗？"];
+    var videoFilenames = ["video_share_4k.mp4","premium_content.mkv","private_recording.m4a","weekly_highlight_hd.mp4"];
+    var videoDescs = ["会员限定视频 · 片长约35分钟","自录珍藏 · 建议戴耳机","每周精选合集 · 1080p","期间限定配信 · 4K HDR"];
+    var videoSizes = ["1.2GB","2.4GB","890MB","3.6GB"];
+
+    var contacts = [
+      {id:"myself",name:"我",shortName:"我",avatarClass:"mine",icon:"👤",isSelf:true},
+      {id:"wife",name:"小雅（妻子）",shortName:"小雅",avatarClass:"wife",icon:"👩",role:"妻子",isSelf:false},
+      {id:"chris",name:"克里斯",shortName:"克里斯",avatarClass:"chris",icon:"💪",role:"黑人丈夫",isSelf:false},
+      {id:"yumi",name:"由美",shortName:"由美",avatarClass:"yumi",icon:"💋",role:"克里斯之妻",isSelf:false}
+    ];
+
+    var chatData = {
+      wife:{messages:[
+        {from:"wife",text:"亲爱的，我装好了这个App……你确定要这样做吗？",time:"2025/09/10 20:15"},
+        {from:"myself",text:"嗯，已经绑定了。你真的愿意？",time:"2025/09/10 20:16"},
+        {from:"wife",text:"是你说的想试试的。我已经和克里斯那边联系上了。",time:"2025/09/10 20:18"},
+        {from:"myself",text:"他们有没有和你说什么奇怪的话？",time:"2025/09/10 20:20"},
+        {from:"wife",text:"克里斯很有礼貌，由美倒是很热情……热情得有点过了。",time:"2025/09/10 20:22"},
+        {from:"myself",text:"我看到你和由美的聊天记录了……她说你可爱？",time:"2025/09/11 08:30"},
+        {from:"wife",text:"就是普通聊天啦。你想多了。",time:"2025/09/11 08:32"},
+        {from:"myself",text:"今晚你真的要去她家？",time:"2025/09/11 14:00"},
+        {from:"wife",text:"只是喝咖啡。你同意了的。",time:"2025/09/11 14:02"},
+        {from:"myself",text:"我知道……只是心里有点怪怪的。",time:"2025/09/11 14:05"}
+      ]},
+      chris:{messages:[
+        {from:"chris",text:"你好，我是克里斯。我想先和你说清楚，我会尊重你们的界限。",time:"2025/09/10 20:30"},
+        {from:"myself",text:"谢谢，克里斯。说实话我还在适应。",time:"2025/09/10 20:32"},
+        {from:"chris",text:"完全理解。我和由美也是花了很多时间才走到这一步。",time:"2025/09/10 20:35"},
+        {from:"myself",text:"你妻子由美她一直这么活跃吗？",time:"2025/09/11 09:00"},
+        {from:"chris",text:"由美比较外向。如果她说了什么让你不舒服的话我替她道歉。",time:"2025/09/11 09:05"},
+        {from:"myself",text:"没事，就是有点不太习惯。",time:"2025/09/11 09:08"},
+        {from:"chris",text:"慢慢来就好。这周末可以一起喝杯咖啡。",time:"2025/09/11 09:10"}
+      ]},
+      yumi:{messages:[
+        {from:"yumi",text:"你好呀～终于联系上你了！",time:"2025/09/10 21:00"},
+        {from:"myself",text:"你好，由美。",time:"2025/09/10 21:02"},
+        {from:"yumi",text:"你老婆真的好可爱哦～",time:"2025/09/10 21:05"},
+        {from:"myself",text:"哈哈是嘛。",time:"2025/09/10 21:08"},
+        {from:"yumi",text:"下周约了你老婆喝咖啡，至少第一次不会对她做什么。",time:"2025/09/11 10:00"},
+        {from:"myself",text:"你这话让我有点不安啊……",time:"2025/09/11 10:05"},
+        {from:"yumi",text:"开玩笑的啦～你好可爱。",time:"2025/09/11 10:10"}
+      ]}
+    };
+
+    var wifeData = {
+      name:"小雅",age:28,role:"妻子 · 结婚3年",avatar:"",
+      corruption:1,qosLevel:0,sexCount:8,
+      currentPartner:"{{user}}",affairCount:12,
+      genitalColor:"pink",
+      outfit:{makeup:"淡妆 · 粉色唇彩",top:"米白色针织毛衣",bottom:"紧身牛仔裤",shoes:"黑色短袜 · 棕色乐福鞋",accessory:"银色锁骨链"},
+      tattoos:{has:false,desc:"",position:""},
+      piercings:{has:false,desc:"",position:""},
+      kinks:["性交","口交","乳交","足交","肛交","3P"],
+      diary:[{date:"2045/09/12",text:"注册了 QOS App，开始我的母狗修炼之路。"}],
+      forumPosts:[]
+    };
+
+    var levelNames = ["纯洁妻子","初次试探","渐入佳境","深度沉迷","完全臣服","QoS契约"];
+    var levelSymbols = ["♦","♠","♠♠","♠♠♠","♠♠♠♠","♠♠♠♠♠"];
+    var genitalColors = {pink:"粉嫩",pink2:"粉色",flesh:"肉色",brown:"棕色",dark:"褐色",black:"黑褐"};
+    var allKinks = [
+      {name:"性交",level:0},{name:"口交",level:1},{name:"乳交",level:1},{name:"足交",level:1},
+      {name:"肛交",level:2},{name:"3P",level:2},{name:"群P",level:3},{name:"羞辱",level:3},
+      {name:"BDSM",level:4},{name:"舔肛",level:4},{name:"公开露出",level:4},{name:"绿奴调教",level:5},{name:"QoS女王化",level:5}
+    ];
+    var questStages = [
+      {stage:1,from:0,to:1,task:"在身上纹下一个 ♠"},
+      {stage:2,from:1,to:2,task:"在论坛发帖上传自己的母狗宣言"},
+      {stage:3,from:2,to:3,task:"进行一次3人侍奉"},
+      {stage:4,from:3,to:4,task:"进行一次公开露出 或 在俱乐部侍奉一整晚"},
+      {stage:5,from:4,to:5,task:"为老公戴上贞操锁，使其成为注册绿奴"}
+    ];
+    var outfitCategories = [
+      {icon:"💄",key:"makeup",label:"妆容"},{icon:"👕",key:"top",label:"上装"},
+      {icon:"👖",key:"bottom",label:"下装"},{icon:"👞",key:"shoes",label:"鞋袜"},{icon:"💍",key:"accessory",label:"配饰"}
+    ];
+
+    var currentTab = 'home';
+    var revealedLocks = {};
+    var questOpen = false;
+    var selectedCategory = -1;
+    var openPostId = null;
+    var postsInitialized = false;
+    var msgView = 'list';
+    var chatTarget = null;
+    var msgTab = 'chat';
+
+    function initApp() {
+      var navBtns = document.querySelectorAll('#bottomNav .nav-btn');
+      for (var i = 0; i < navBtns.length; i++) {
+        (function(btn) {
+          btn.addEventListener('click', function() {
+            var tab = btn.getAttribute('data-tab') || 'home';
+            switchTab(tab);
+          });
+        })(navBtns[i]);
+      }
+      loadData();
+    }
+    // 兼容两种嵌入方式：作为完整页面直接打开时文档仍在解析（loading），等事件；
+    // 被 .load() 等方式异步注入时事件早已触发，直接执行初始化。
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      var btns = document.querySelectorAll('#bottomNav .nav-btn');
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.remove('active');
+        var t = btns[i].getAttribute('data-tab') || 'home';
+        if (t === tab) btns[i].classList.add('active');
+      }
+      if (tab !== 'messages') { msgView = 'list'; }
+      render();
+    }
+
+    function loadData() {
+      try {
+        var helper = window.TavernHelper || window;
+        if (helper.getVariables) {
+          var cv = helper.getVariables({type:'chat'});
+          var d = cv && cv.qos_app && cv.qos_app.wifeProfile;
+          if (d) { for (var k in d) wifeData[k] = d[k]; }
+        }
+      } catch(e) {}
+      initForumPosts();
+      render();
+    }
+
+    function render() {
+      var app = document.getElementById('app');
+      if (!app) return;
+      app.innerHTML = '';
+      if (currentTab === 'home') renderHome(app);
+      else if (currentTab === 'forum') renderForum(app);
+      else if (currentTab === 'messages') renderMessages(app);
+      else if (currentTab === 'ranking') renderRanking(app);
+      else if (currentTab === 'profile') renderProfile(app);
+    }
+
+    function generateRepliesForPost(postIndex, authorName) {
+      var replyData = postReplies[postIndex];
+      if (!replyData) { replyData = [{author:"樱花酱",text:"赞同楼上说的。"},{author:"直树先生",text:"有道理。"}]; }
+      var result = []; var usedAuthors = {}; usedAuthors[authorName]=true;
+      for (var i = 0; i < replyData.length; i++) {
+        var r = replyData[i];
+        if (!usedAuthors[r.author]) {
+          var avatarClass = "pink";
+          for (var j = 0; j < npcPool.length; j++) { if (npcPool[j].name === r.author) { avatarClass = npcPool[j].avatarClass; break; } }
+          result.push({author:r.author,text:r.text,time:"刚刚",avatarClass:avatarClass});
+          usedAuthors[r.author]=true;
+        }
+      }
+      return result;
+    }
+
+    function initForumPosts() {
+      if (postsInitialized) return;
+      postsInitialized = true;
+      
+      var postsData = [
+        {cat:0,title:"初次见面！东京来的新人家政妇",content:"大家好，我是住在东京世田谷区的一个普通主妇。",author:"樱花酱",time:"3小时前",likes:34,replyIdx:0},
+        {cat:0,title:"从名古屋来的 请多关照",content:"名古屋出身，今年25岁，在美容院工作。",author:"大阪由美",time:"6小时前",likes:27,replyIdx:1},
+        {cat:0,title:"第三次注册了 这次不想再删了",content:"每次注册完都很害羞过几天就删掉了。",author:"秋叶原麻衣",time:"1天前",likes:52,replyIdx:2},
+        {cat:1,title:"关于纹身含义的问题 求详细解答！",content:"姐妹们好，最近在考虑纹一个QoS相关的纹身。",author:"横滨绫乃",time:"2小时前",likes:67,replyIdx:3},
+        {cat:1,title:"想问下前辈们 第一次去俱乐部注意什么",content:"约了这周末去六本木的一家会员制俱乐部。",author:"涩谷真由美",time:"5小时前",likes:55,replyIdx:4},
+        {cat:1,title:"老公好像发现了我的秘密 怎么办",content:"今天老公用我手机查东西的时候好像看到了App图标。",author:"浅草千夏",time:"8小时前",likes:78,replyIdx:5},
+        {cat:2,title:"第一次和黑人之后就回不去了",content:"以前从来没有想过会这样。",author:"银座美穗",time:"30分钟前",likes:98,replyIdx:6},
+        {cat:2,title:"大家觉得和黑人的体验最棒的是什么",content:"对我来说是那种被完全掌控的感觉。",author:"东京奈奈子",time:"4小时前",likes:85,replyIdx:7},
+        {cat:2,title:"老公完全不知道我的真实喜好",content:"老公一直以为我只是喜欢普通的玩法。",author:"大阪由美",time:"7小时前",likes:67,replyIdx:8},
+        {cat:2,title:"涩谷新开了一家黑人酒吧 去过了",content:"昨天去探店了，氛围很好。",author:"直树先生",time:"1天前",likes:44,replyIdx:9},
+        {cat:3,title:"东京23区姐妹群 欢迎加入",content:"建了一个东京的姐妹交流群，目前有11个人了。",author:"樱花酱",time:"2小时前",likes:38,replyIdx:10},
+        {cat:3,title:"大阪地区的同好求面基",content:"坐标大阪梅田附近。",author:"大阪由美",time:"1天前",likes:31,replyIdx:11},
+        {cat:3,title:"有没有程序员圈子的同好",content:"自己做Web开发的，在品川上班。",author:"秋叶原麻衣",time:"2天前",likes:45,replyIdx:12},
+        {cat:3,title:"周末一起健身房如何",content:"每周六下午都去新宿的健身房。",author:"翔太学长",time:"3天前",likes:29,replyIdx:13},
+        {cat:4,title:"分享一下在涉谷纹的新纹身",content:"腰窝位置纹了一个黑色QoS图腾。",author:"涩谷真由美",time:"4小时前",likes:72,replyIdx:14},
+        {cat:4,title:"私密处纹身的位置推荐",content:"想在比较私密的位置纹一个黑桃。",author:"浅草千夏",time:"9小时前",likes:55,replyIdx:15},
+        {cat:4,title:"今日穿搭 感觉自己好QoS",content:"黑色蕾丝内衣、黑色皮裙、黑丝、马丁靴。",author:"东京奈奈子",time:"12小时前",likes:64,replyIdx:16},
+        {cat:4,title:"想问下大家的耳环和配饰",content:"最近迷上了收集锁骨链和脚链。",author:"银座美穗",time:"1天前",likes:37,replyIdx:17},
+        {cat:5,title:"Netflix纪录片东京之夜推荐",content:"推荐Netflix的纪录片东京之夜。",author:"健太君",time:"2天前",likes:48,replyIdx:18,video:{filename:"Tokyo_Night_S03E04_1080p.mp4",desc:"Netflix纪录片 · 片长约47分钟",size:"1.8GB"}},
+        {cat:5,title:"油管博主东京秘密的新视频",content:"日本油管博主东京秘密发了新视频。",author:"拓也前辈",time:"3天前",likes:36,replyIdx:19,video:{filename:"tokyo_secrets_ep42_720p.mp4",desc:"YouTube · 东京秘密 · EP42",size:"520MB"}},
+        {cat:5,title:"分享一个自己拍的日常Vlog",content:"记录了一个普通的周末。",author:"横滨绫乃",time:"4天前",likes:91,replyIdx:20,video:{filename:"my_weekend_vlog_202509_4k.mp4",desc:"自拍日常Vlog · 4K画质 · 片长23分钟",size:"3.2GB"}},
+        {cat:5,title:"深夜听的ASMR 推荐给失眠的姐妹",content:"发现了一个专门做成人ASMR的频道。",author:"真司郎",time:"5天前",likes:73,replyIdx:21,video:{filename:"asmr_midnight_vol7_aac.m4a",desc:"ASMR音频 · 深夜专辑Vol.7",size:"890MB"}}
+      ];
+
+      for (var i = 0; i < postsData.length; i++) {
+        var p = postsData[i];
+        var npcInfo = null;
+        for (var j = 0; j < npcPool.length; j++) { if (npcPool[j].name === p.author) { npcInfo = npcPool[j]; break; } }
+        if (!npcInfo) npcInfo = {avatarClass:"pink",icon:"👤",gender:"女"};
+        var replies = generateRepliesForPost(p.replyIdx, p.author);
+        wifeData.forumPosts.push({
+          id: "post_"+Math.random().toString(36).slice(2,10),
+          category: p.cat, title: p.title, content: p.content, author: p.author,
+          avatarClass: npcInfo.avatarClass, avatarIcon: npcInfo.icon, gender: npcInfo.gender,
+          time: p.time, likes: p.likes, replies: replies, replyRounds: 2, isNew: false, video: p.video || null
+        });
+      }
+    }
+
+    function refreshForum() {
+      var count = 1+Math.floor(Math.random()*3);
+      for (var i = 0; i < count; i++) {
+        var cat = Math.floor(Math.random()*6);
+        var title = randomTitles[Math.floor(Math.random()*randomTitles.length)];
+        var content = randomContents[Math.floor(Math.random()*randomContents.length)];
+        var npcIdx = Math.floor(Math.random()*npcPool.length);
+        var npc = npcPool[npcIdx];
+        var pool = [];
+        for (var j = 0; j < npcPool.length; j++) { if (npcPool[j].name !== npc.name) pool.push(npcPool[j]); }
+        for (var j = pool.length-1; j > 0; j--) { var rj = Math.floor(Math.random()*(j+1)); var rt = pool[j]; pool[j] = pool[rj]; pool[rj] = rt; }
+        var replies = [];
+        for (var r = 0; r < 2 && r < pool.length; r++) { replies.push({author:pool[r].name,text:quickReplies[Math.floor(Math.random()*quickReplies.length)],time:"刚刚",avatarClass:pool[r].avatarClass}); }
+        var video = null;
+        if (cat === 5) { var vi = Math.floor(Math.random()*videoFilenames.length); video = {filename:videoFilenames[vi],desc:videoDescs[vi],size:videoSizes[vi]}; }
+        wifeData.forumPosts.unshift({id:"new_"+Date.now()+"_"+i,category:cat,title:title,content:content,author:npc.name,avatarClass:npc.avatarClass,avatarIcon:npc.icon,gender:npc.gender,time:"刚刚",likes:Math.floor(Math.random()*50)+5,replies:replies,replyRounds:2,isNew:true,video:video});
+      }
+      fillSTInput("我刷着app内的论坛，点了一下刷新，多了几条新帖子。");
+      render();
+    }
+
+    function getNowTime() {
+      var d = new Date();
+      return d.getFullYear()+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+('0'+d.getDate()).slice(-2)+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+    }
+
+    function sendChatMessage(contactId) {
+      var input = document.getElementById('chatInput');
+      if (!input) return;
+      var text = input.value.trim();
+      if (!text) return;
+      if (!chatData[contactId]) chatData[contactId] = {messages:[]};
+      chatData[contactId].messages.push({from:"myself",text:text,time:getNowTime()});
+      var nameMap = {wife:"小雅",chris:"克里斯",yumi:"由美"};
+      fillSTInput('我对'+(nameMap[contactId]||contactId)+'发送了：'+text);
+      input.value = '';
+      render();
+      setTimeout(function(){var cd=document.getElementById('chatMessages');if(cd)cd.scrollTop=cd.scrollHeight;var inp=document.getElementById('chatInput');if(inp)inp.focus();},50);
+    }
+
+    function handleChatKeyDown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(chatTarget); } }
+    function fillSTInput(text) { try { var top=window.top||window.parent||window; var ta=top.document.querySelector("#send_textarea")||top.document.querySelector("textarea"); if(ta){ var setter=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,"value"); if(setter&&setter.set){setter.set.call(ta,text);}else{ta.value=text;} ta.dispatchEvent(new Event("input",{bubbles:true})); ta.dispatchEvent(new Event("change",{bubbles:true})); ta.focus(); } } catch(e){} }
+
+    function openPostModal() { document.getElementById("postOverlay").classList.add("show"); document.getElementById("postTitle").value=""; document.getElementById("postContent").value=""; }
+    function closePostModal(e) { if(e&&e.target!==e.currentTarget) return; document.getElementById("postOverlay").classList.remove("show"); }
+
+    function submitPost() {
+      var cat=parseInt(document.getElementById('postCategory').value);
+      var title=document.getElementById('postTitle').value.trim();
+      var content=document.getElementById('postContent').value.trim();
+      if(!title||!content){alert("请填写标题和内容！");return;}
+      var pool=[]; for(var j=0;j<npcPool.length;j++) pool.push(npcPool[j]);
+      for(var j=pool.length-1;j>0;j--){var rj=Math.floor(Math.random()*(j+1));var rt=pool[j];pool[j]=pool[rj];pool[rj]=rt;}
+      var replies=[]; for(var r=0;r<2&&r<pool.length;r++){replies.push({author:pool[r].name,text:quickReplies[Math.floor(Math.random()*quickReplies.length)],time:"刚刚",avatarClass:pool[r].avatarClass});}
+      wifeData.forumPosts.unshift({id:"post_"+Date.now(),category:cat,title:title,content:content,author:wifeData.name,avatarClass:"pink",avatarIcon:"👤",gender:"女",time:"刚刚",likes:0,replies:replies,replyRounds:2,isNew:true,video:null});
+      fillSTInput("我打算发个帖子，内容为："+content);
+      closePostModal(); render();
+    }
+
+    // ===== 首页 - 黑桃Q设计 =====
+    function renderHome(container) {
+      var html = '<div class="home-hero">';
+      html += '<div class="home-spade">♠</div>';
+      html += '<div class="home-spade-q">Q</div>';
+      html += '<div class="home-welcome">欢迎加入黑桃俱乐部</div>';
+      html += '<div class="home-sub">Queen of Spades</div>';
+      html += '<div class="home-divider"></div>';
+      html += '</div>';
+      
+      html += '<div class="card"><div class="card-title">🕐 最近动态</div><div class="home-activity">';
+      html += '<div class="home-activity-item"><div class="home-activity-icon msg">💬</div><div class="home-activity-text">和小雅的聊天</div><div class="home-activity-time">今天</div></div>';
+      html += '<div class="home-activity-item"><div class="home-activity-icon msg">💬</div><div class="home-activity-text">克里斯发来消息</div><div class="home-activity-time">昨天</div></div>';
+      html += '<div class="home-activity-item"><div class="home-activity-icon post">📋</div><div class="home-activity-text">论坛有新的帖子</div><div class="home-activity-time">刚刚</div></div>';
+      html += '<div class="home-activity-item"><div class="home-activity-icon rank">👑</div><div class="home-activity-text">由美登上女王榜第1</div><div class="home-activity-time">2小时前</div></div>';
+      html += '</div></div>';
+      
+      container.innerHTML = html;
+    }
+
+    // ===== 论坛 =====
+    function renderForum(container) {
+      var posts = wifeData.forumPosts;
+      if (selectedCategory >= 0) { var f = []; for(var i=0;i<posts.length;i++){if(posts[i].category===selectedCategory)f.push(posts[i]);} posts=f; }
+      var html = '<div class="forum-header"><h2>📋 QOS 论坛</h2><div class="forum-actions"><button class="forum-btn post-btn" onclick="openPostModal()">＋发帖</button><button class="forum-btn" onclick="refreshForum()">⟳刷新</button></div></div>';
+      html += '<div class="category-nav"><span class="category-tab '+(selectedCategory===-1?"active":"")+'" onclick="filterCategory(-1)">🔥 全部</span>';
+      for(var i=0;i<categoryNames.length;i++){ html+='<span class="category-tab '+(selectedCategory===i?"active":"")+'" onclick="filterCategory('+i+')">'+catIcons[i]+' '+categoryNames[i]+'</span>'; }
+      html += '</div><div class="post-list">';
+      if(posts.length===0) html+='<div style="text-align:center;padding:40px 0;color:#444;font-size:13px;">暂无帖子</div>';
+      for(var i=0;i<posts.length;i++){ var p=posts[i]; var isOpen=(openPostId===p.id); var cn=categoryNames[p.category]||"综合"; var ci=catIcons[p.category]||"📌"; var ac=(p.gender==="男")?"#66ccff":"#ff69b4";
+        html+='<div class="post-card '+(isOpen?"open":"")+'" onclick="togglePost(\''+p.id+'\')"><div class="post-top"><div class="post-avatar '+p.avatarClass+'">'+p.avatarIcon+'</div><div class="post-info"><div class="post-title">'+escapeHtml(p.title)+'</div><div class="post-meta-line"><span class="post-category-tag">'+ci+' '+cn+'</span><span class="post-author" style="color:'+ac+'">'+p.author+'</span><span class="post-time">'+p.time+'</span></div></div><div class="post-stats"><span>❤️ '+p.likes+'</span><span>💬 '+p.replies.length+'</span></div></div>';
+        html+='<div class="post-body '+(isOpen?"show":"")+'">';
+        if(p.video){ html+='<div class="video-card"><div class="video-icon">🎬</div><div class="video-info"><div class="video-filename">📁 '+escapeHtml(p.video.filename)+'</div><div class="video-desc">'+escapeHtml(p.video.desc)+'</div><span class="video-badge">'+p.video.size+'</span></div></div>'; }
+        html+='<div class="post-content">'+escapeHtml(p.content)+'</div>';
+        if(p.replies.length>0){ html+='<div class="reply-section"><div class="reply-title">—— 回复（'+p.replies.length+'条）——</div>'; for(var r=0;r<p.replies.length;r++){ html+='<div class="reply-item"><div class="reply-avatar" style="font-size:12px;display:grid;place-items:center;">👤</div><div class="reply-body"><div class="reply-author">'+p.replies[r].author+'</div><div class="reply-text">'+escapeHtml(p.replies[r].text)+'<span class="time">'+p.replies[r].time+'</span></div></div></div>'; } html+='</div>'; }
+        html+='</div></div>'; }
+      html+='</div>'; container.innerHTML=html;
+    }
+
+    function togglePost(id){ openPostId=(openPostId===id)?null:id; render(); }
+    function filterCategory(cat){ selectedCategory=cat; openPostId=null; render(); }
+
+    // ===== 消息 =====
+    function renderMessages(container) {
+      if (msgView === 'chat' && chatTarget) { renderChat(container,chatTarget); return; }
+      var html = '<div class="messages-header"><h2>💬 消息</h2></div>';
+      html += '<div class="msg-tabs"><span class="msg-tab '+(msgTab==='chat'?'active':'')+'" onclick="switchMsgTab(\'chat\')">💬 私信</span><span class="msg-tab '+(msgTab==='notice'?'active':'')+'" onclick="switchMsgTab(\'notice\')">🔔 通知</span></div>';
+      if (msgTab === 'chat') {
+        html += '<div class="contact-list">';
+        for (var i = 0; i < contacts.length; i++) { var c = contacts[i]; if (c.isSelf) continue;
+          var chat = chatData[c.id]; var lastMsg = (chat && chat.messages.length>0) ? chat.messages[chat.messages.length-1].text : '暂无消息';
+          var lastTime = (chat && chat.messages.length>0) ? chat.messages[chat.messages.length-1].time : '';
+          var preview = lastMsg.length>25 ? lastMsg.slice(0,25)+'...' : lastMsg;
+          html += '<div class="contact-item" onclick="openChat(\''+c.id+'\')"><div class="contact-avatar '+c.avatarClass+'">'+c.icon+'</div><div class="contact-info"><div class="contact-name">'+c.name+'</div><div class="contact-preview">'+escapeHtml(preview)+'</div></div><div class="contact-time">'+lastTime.slice(-5)+'</div></div>';
+        }
+        html += '</div>';
+      } else {
+        html += '<div class="notice-item"><div class="notice-title">📢 系统通知</div><div class="notice-text">欢迎使用 QOS App！</div><div class="notice-time">2045/09/12</div></div>';
+        html += '<div class="notice-item"><div class="notice-title">🎉 好友请求</div><div class="notice-text">「由美」请求添加你为好友。</div><div class="notice-time">2045/09/11</div></div>';
+      }
+      container.innerHTML = html;
+    }
+
+    function renderChat(container,contactId) {
+      var contact = null; for(var i=0;i<contacts.length;i++){if(contacts[i].id===contactId){contact=contacts[i];break;}} if(!contact){msgView='list';render();return;}
+      var chat = chatData[contactId]||{messages:[]}; var html='<div class="chat-view">';
+      html+='<div class="chat-header"><button class="back-btn" onclick="closeChat()">‹</button><div class="contact-avatar '+contact.avatarClass+'" style="width:32px;height:32px;font-size:14px;">'+contact.icon+'</div><div class="chat-name">'+contact.name+'</div><div class="chat-status">在线</div></div>';
+      html+='<div class="chat-messages" id="chatMessages">';
+      for(var i=0;i<chat.messages.length;i++){var msg=chat.messages[i];var isMine=(msg.from==='myself'); html+='<div class="chat-bubble '+(isMine?'sent':'received')+'">'+escapeHtml(msg.text)+'<span class="bubble-time">'+msg.time.slice(-5)+'</span></div>';}
+      html+='</div><div class="chat-input-area"><textarea class="chat-input" id="chatInput" placeholder="输入消息..." rows="1" onkeydown="handleChatKeyDown(event)"></textarea><button class="chat-send-btn" onclick="sendChatMessage(\''+contactId+'\')">➤</button></div></div>';
+      container.innerHTML=html;
+      setTimeout(function(){var cd=document.getElementById('chatMessages');if(cd)cd.scrollTop=cd.scrollHeight;var inp=document.getElementById('chatInput');if(inp)inp.focus();},100);
+    }
+
+    function switchMsgTab(tab){msgTab=tab;render();}
+    function openChat(contactId){chatTarget=contactId;msgView='chat';render();}
+    function closeChat(){msgView='list';chatTarget=null;render();}
+
+    // ===== 热门 =====
+    function renderRanking(container) {
+      var allPosts = wifeData.forumPosts.slice();
+      allPosts.sort(function(a,b){return b.likes-a.likes;});
+      var topPosts = allPosts.slice(0,5);
+      var rankClass = ["gold","silver","bronze","",""];
+      var rankIcon = ["🥇","🥈","🥉","4","5"];
+      var html = '<div class="ranking-section">';
+      
+      html += '<div class="ranking-card"><div class="ranking-header"><h3>👑 QOS 女王榜</h3><span class="hot-icon">🔥</span></div>';
+      for (var i = 0; i < queenRankings.length; i++) { var q = queenRankings[i]; var rIcon = (i<3)?rankIcon[i]:(i+1);
+        html += '<div class="rank-item"><span class="rank-number '+(rankClass[i]||'')+'">'+rIcon+'</span><div class="rank-avatar '+q.avatarClass+'">'+q.icon+'</div><div class="rank-info"><div class="rank-name">'+q.name+'<span class="title-tag">'+q.title+'</span></div><div class="rank-meta">热度 '+q.heat+'</div></div><span class="rank-heat">'+q.heat+'</span></div>';
+      }
+      html += '<div class="bond-status-box"><div><div class="bond-label">绑定对象</div><div class="bond-name">小雅（妻子）</div></div><div class="bond-status">未上榜</div></div></div>';
+      
+      html += '<div class="ranking-card"><div class="ranking-header"><h3>📈 热门帖子 TOP5</h3><span class="hot-icon">🔥</span></div>';
+      for (var i = 0; i < topPosts.length; i++) { var p = topPosts[i]; var rIcon = (i<3)?rankIcon[i]:(i+1); var cn = categoryNames[p.category]||"综合";
+        html += '<div class="rank-post-item"><span class="rank-number '+(rankClass[i]||'')+'">'+rIcon+'</span><span class="rank-post-cat">'+cn+'</span><span class="rank-post-title">'+escapeHtml(p.title)+'</span><span class="rank-post-heat">'+p.likes+'</span></div>';
+      }
+      html += '</div></div>';
+      container.innerHTML = html;
+    }
+
+    function escapeHtml(text) { if(!text) return ""; return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+    // ===== 绑定对象 =====
+    function renderProfile(container) {
+      var level = wifeData.qosLevel; var cup = getCupSize(level); var isLocked = (level >= 3);
+      var statusText = "在家", statusClass = ""; if(isLocked){statusText="🔒 绿奴禁止";statusClass="locked";}
+      var partnerDisplay = wifeData.currentPartner, partnerLocked = false; if(level>=3){partnerDisplay="🔒 绿奴禁止";partnerLocked=true;}
+      var affairDisplay = wifeData.affairCount+"次", affairLocked = false; if(level>=3){affairDisplay="🔒 绿奴禁止";affairLocked=true;}
+      var html = '<div class="profile-header"><div class="profile-avatar">'+(wifeData.avatar?'<img src="'+wifeData.avatar+'" onerror="this.style.display=none">':'👤')+'</div><div class="profile-name">'+wifeData.name+'</div><div class="profile-meta">'+wifeData.age+'岁 · '+wifeData.role+'</div><span class="profile-status '+statusClass+'">'+statusText+'</span></div>';
+      html += '<div class="card"><div class="card-title">📊 核心数据</div><div class="level-display"><div class="level-symbol">'+levelSymbols[level]+'</div><div class="level-name">'+levelNames[level]+'</div></div><div class="meter-row"><div class="meter-label"><span>堕落值</span><span>'+wifeData.corruption+'%</span></div><div class="meter-track"><div class="meter-fill corruption" style="width:'+wifeData.corruption+'%"></div></div></div><div class="lock-item"><span class="lock-label">当前伴侣</span><span class="lock-value '+(partnerLocked?"locked":"")+'" data-key="partner"'+(partnerLocked?' onclick="toggleLock(this)"':'')+'>'+partnerDisplay+'</span></div><div class="lock-item"><span class="lock-label">出轨次数</span><span class="lock-value '+(affairLocked?"locked":"")+'" data-key="affair"'+(affairLocked?' onclick="toggleLock(this)"':'')+'>'+affairDisplay+'</span></div></div>';
+      html += '<div class="card"><div class="card-title">📋 身体档案</div><div class="body-stats"><div class="body-stat-item"><div class="body-stat-value">'+cup+'</div><div class="body-stat-label">罩杯</div></div><div class="body-stat-item"><div class="body-stat-value">'+wifeData.sexCount+'</div><div class="body-stat-label">性行为次数</div></div></div><div class="body-detail"><div class="body-detail-label">性器颜色</div><div class="body-detail-value">'+(genitalColors[wifeData.genitalColor]||wifeData.genitalColor)+'</div></div><div class="body-detail"><div class="body-detail-label">当前衣着</div></div><div class="outfit-grid">'; for(var i=0;i<outfitCategories.length;i++){ var oc=outfitCategories[i]; html+='<div class="outfit-item"><div class="outfit-icon">'+oc.icon+'</div><div class="outfit-info"><div class="outfit-category">'+oc.label+'</div><div class="outfit-desc">'+(wifeData.outfit[oc.key]||"—")+'</div></div></div>'; } html += '</div></div>';
+      html += '<div class="card"><button class="quest-toggle" onclick="toggleQuest()"><span>♠ 晋升任务</span><span class="arrow '+(questOpen?"open":"")+'">▼</span></button><div class="quest-list '+(questOpen?"open":"")+'">'; for(var i=0;i<questStages.length;i++){ var q=questStages[i]; var s,ic; if(i<level){s="completed";ic="✓";}else if(i===level){s="available";ic="○";}else{s="locked";ic="🔒";} html+='<div class="quest-item '+s+'"><span class="quest-icon">'+ic+'</span><span>'+q.task+'</span><span class="quest-stage">阶段'+q.stage+'</span></div>'; } html += '</div></div>';
+      html += '<div class="card"><div class="card-title">♠ 改造记录</div><div class="mod-item" onclick="toggleModDetail(\'tattoo\')"><span class="mod-name">QoS纹身</span><span class="mod-status '+(wifeData.tattoos.has?"yes":"no")+'">'+(wifeData.tattoos.has?"✓ 有":"✗ 无")+'</span></div><div class="mod-detail" id="mod-tattoo">'+(wifeData.tattoos.has?'<strong>位置：</strong>'+wifeData.tattoos.position+'<br><strong>描述：</strong>'+wifeData.tattoos.desc:'暂无纹身记录')+'</div><div class="mod-item" onclick="toggleModDetail(\'piercing\')"><span class="mod-name">穿环</span><span class="mod-status '+(wifeData.piercings.has?"yes":"no")+'">'+(wifeData.piercings.has?"✓ 有":"✗ 无")+'</span></div><div class="mod-detail" id="mod-piercing">'+(wifeData.piercings.has?'<strong>位置：</strong>'+wifeData.piercings.position+'<br><strong>描述：</strong>'+wifeData.piercings.desc:'暂无穿环记录')+'</div></div>';
+      html += '<div class="card"><div class="card-title">❤️ 可接受的玩法</div><div class="kink-list">'; for(var i=0;i<allKinks.length;i++){ var k=allKinks[i]; var unlocked=(level>=k.level); html+='<span class="kink-tag '+(unlocked?"":"locked")+'">'+(unlocked?k.name:"?")+'</span>'; } html += '</div></div>';
+      html += '<button class="diary-btn" onclick="openDiary()"><span>📖 查看私密日记</span><span>→</span></button>';
+      container.innerHTML = html;
+    }
+
+    function toggleLock(el) { var key=el.dataset.key; if(revealedLocks[key]){ revealedLocks[key]=false; el.classList.remove("revealed"); if(key==="partner") el.textContent="🔒 绿奴禁止"; if(key==="affair") el.textContent="🔒 绿奴禁止"; } else{ revealedLocks[key]=true; el.classList.add("revealed"); if(key==="partner") el.textContent="👁 "+wifeData.currentPartner; if(key==="affair") el.textContent="👁 "+wifeData.affairCount+"次"; } }
+    function toggleQuest(){ questOpen=!questOpen; render(); }
+    function toggleModDetail(type){ var el=document.getElementById("mod-"+type); if(el){ if(el.classList.contains("show")) el.classList.remove("show"); else el.classList.add("show"); } }
+    function openDiary(){ var ov=document.getElementById("diaryOverlay"); var c=document.getElementById("diaryEntries"); if(wifeData.diary&&wifeData.diary.length>0){ var h=""; for(var i=0;i<wifeData.diary.length;i++){ h+='<div class="diary-entry"><div class="diary-date">'+wifeData.diary[i].date+'</div><div class="diary-text">'+wifeData.diary[i].text+'</div></div>'; } c.innerHTML=h; }else{c.innerHTML='<div class="diary-entry"><div class="diary-text" style="color:#666;">暂无日记记录</div></div>';} ov.classList.add("show"); }
+    function closeDiary(e){ if(e&&e.target!==e.currentTarget) return; document.getElementById("diaryOverlay").classList.remove("show"); }
+  </script>
