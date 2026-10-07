@@ -1,0 +1,17 @@
+{
+  "id": "c0c38142-ce5f-431a-8324-e5c3b07abf45",
+  "scriptName": "思维链-移出上下文",
+  "findRegex": "<thinking>[\\s\\S]*?</thinking>\\s*",
+  "flags": "gi",
+  "trimStrings": [],
+  "placement": [
+    2
+  ],
+  "disabled": false,
+  "markdownOnly": false,
+  "promptOnly": true,
+  "runOnEdit": true,
+  "substituteRegex": 0,
+  "minDepth": null,
+  "maxDepth": null
+}

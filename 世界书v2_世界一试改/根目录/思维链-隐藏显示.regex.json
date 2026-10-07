@@ -1,0 +1,17 @@
+{
+  "id": "3640ac01-7397-43d3-a3c8-368f8c01c50a",
+  "scriptName": "思维链-隐藏显示",
+  "findRegex": "<thinking>[\\s\\S]*?</thinking>\\s*",
+  "flags": "gi",
+  "trimStrings": [],
+  "placement": [
+    2
+  ],
+  "disabled": false,
+  "markdownOnly": true,
+  "promptOnly": false,
+  "runOnEdit": true,
+  "substituteRegex": 0,
+  "minDepth": null,
+  "maxDepth": null
+}
